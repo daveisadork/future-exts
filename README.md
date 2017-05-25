@@ -1,6 +1,6 @@
 # future-exts
 
-Monkeypatches `.then` onto the Python 2 [futures][futures] library.
+Adds `.completed`, `.map` and `.then` methods to the Python 2 [futures][futures] library.
 
 ## Setup
 
