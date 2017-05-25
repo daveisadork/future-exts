@@ -8,8 +8,6 @@ Adds `.completed`, `.map` and `.then` methods to the Python 2 [futures][futures]
 
 ## Example
 
-Here's a contrived example:
-
 ``` python
 import future_exts  # noqa
 import re
