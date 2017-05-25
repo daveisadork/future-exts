@@ -33,19 +33,21 @@ class Future(futures.Future):
             return Future.completed([])
 
         res_future = cls()
-        res_futures = []
+        results = {}
 
-        def join(future):
-            try:
-                res_futures.append(future)
-                if len(res_futures) == len(futures):
-                    res_list = [f.result() for f in sorted(res_futures, key=lambda f: futures.index(f))]
-                    res_future.set_result(res_list)
-            except BaseException:
-                _copy_exception(res_future)
+        def join(i):
+            def inner(future):
+                try:
+                    results[i] = future.result()
+                    if len(results) == len(futures):
+                        sorted_results = sorted(results.iteritems(), key=lambda (i, _): i)
+                        res_future.set_result([res for _, res in sorted_results])
+                except BaseException:
+                    _copy_exception(res_future)
+            return inner
 
-        for future in futures:
-            future.add_done_callback(join)
+        for i, future in enumerate(futures):
+            future.add_done_callback(join(i))
 
         return res_future
 
