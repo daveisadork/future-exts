@@ -23,7 +23,6 @@ def read_url(url):
   return executor.submit(requests.get, url) \
                  .map(lambda res: (res.status_code, res.text))
 
-
 def read_next_url(response):
   status, text = response
   if status == 404:
