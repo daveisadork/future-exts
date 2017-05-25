@@ -12,26 +12,39 @@ Here's a contrived example:
 
 ``` python
 import future_exts  # noqa
+import re
 import requests
+import threading
 
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 
 executor = ThreadPoolExecutor(max_workers=8)
+anchor_re = re.compile(r'<a href="([^"]+)">')
+seen = set()
+
+
+def process(response):
+    futures = []
+    for match in anchor_re.finditer(response.text):
+        anchor = match.group(1)
+        if anchor not in seen and anchor.startswith("http://"):
+            futures.append(crawl(anchor))
+
+    return Future.sequence(futures)
+
 
 def read_url(url):
-  print "Requesting", url
-  return executor.submit(requests.get, url) \
-                 .map(lambda res: (res.status_code, res.text))
+    print "Crawling", url, "on thread", threading.current_thread()
+    return requests.get(url)
 
-def read_next_url(response):
-  status, text = response
-  if status == 404:
-    return read_url("http://example.com")
-  return response
 
-future = read_url("http://yahoo.com/foo") \
-  .then(read_next_url) \
-  .then(read_next_url)
+def crawl(url):
+    seen.add(url)
+    return executor.submit(read_url, url).then(process)
+
+
+future = crawl("http://reddit.com")
+future.result()
 ```
 
 [futures]: https://pypi.python.org/pypi/futures

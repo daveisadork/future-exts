@@ -18,6 +18,37 @@ class Future(futures.Future):
         future.set_result(res)
         return future
 
+    @classmethod
+    def sequence(cls, futures):
+        """Convert a list of futures to a future of a list.
+
+        Parameters:
+          futures(list)
+
+        Returns:
+          Future: A future representing the list of futures'
+          individual values.
+        """
+        if not futures:
+            return Future.completed([])
+
+        res_future = cls()
+        res_futures = []
+
+        def join(future):
+            try:
+                res_futures.append(future)
+                if len(res_futures) == len(futures):
+                    res_list = [f.result() for f in sorted(res_futures, key=lambda f: futures.index(f))]
+                    res_future.set_result(res_list)
+            except BaseException:
+                _copy_exception(res_future)
+
+        for future in futures:
+            future.add_done_callback(join)
+
+        return res_future
+
     def map(self, fn):
         """Map the result of this future using an arbitrary function.
 
